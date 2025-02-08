@@ -3,13 +3,9 @@ import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-route
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { SessionProvider } from './context/SessionContext';
-import AdminDashboard from './components/AdminHomepage';
-import AdminHomepage from './components/AdminHomepage';
-import AdminProfile from './components/AdminProfile';
-import UserList from './components/UserList';
+import { SessionProvider } from './context/SessionContext'; // ✅ Import SessionProvider
 
-// Lazy Load Components for Performance
+// Lazy Load Components
 const LandingPage = lazy(() => import('./components/LandingPage'));
 const Homepage = lazy(() => import('./components/Homepage'));
 const ForumPage = lazy(() => import('./components/ForumPage'));
@@ -23,20 +19,20 @@ const UserProfile = lazy(() => import('./components/UserProfile'));
 const TherapistList = lazy(() => import('./components/TherapistList'));
 const MoodTracker = lazy(() => import('./components/MoodTracker'));
 const TherapistHomepage = lazy(() => import('./components/TherapistHomepage'));
-const ScheduledSessions = lazy(() => import('./components/ScheduledSessions'));
+const UserSessions = lazy(() => import('./components/UserSessions')); // Import UserSessions
 
 const AppContent = ({ userType }) => {
   const location = useLocation();
 
   const noNavbarPaths = ['/', '/login', '/register'];
-const showNavbar = !noNavbarPaths.includes(location.pathname) && !location.pathname.startsWith('/therapist/homepage') && !location.pathname.startsWith('/admin/');
-const showFooter = !noNavbarPaths.includes(location.pathname);
-
+  const showNavbar = !noNavbarPaths.includes(location.pathname) && !location.pathname.startsWith('/therapist/homepage');
+  const showFooter = !noNavbarPaths.includes(location.pathname); // Ensure footer is visible on all relevant pages
 
   return (
-    <SessionProvider> {/* Wrap the entire app content inside SessionProvider */}
+    <div className="d-flex flex-column min-vh-100"> {/* Full height container */}
       {showNavbar && <Navbar userType={userType} />}
-      <div style={{ paddingTop: showNavbar ? '70px' : '0px' }}> {/* Push content below navbar */}
+      
+      <div className="main-content flex-grow-1"> {/* Ensures content stretches to push footer */}
         <Suspense fallback={<div>Loading...</div>}>
           <Routes>
             <Route path="/" element={<LandingPage />} />
@@ -47,26 +43,36 @@ const showFooter = !noNavbarPaths.includes(location.pathname);
             <Route path="/create-forum" element={<CreateForum />} />
             <Route path="/chat/:forumId" element={<ChatPage />} />
             <Route path="/resources" element={<Resources />} />
-            <Route path="/therapist/homepage" element={<TherapistHomepage />} />
+            
+            {/* ✅ Wrap TherapistHomepage and UserSessions with SessionProvider */}
+            <Route
+              path="/therapist/homepage"
+              element={
+                <SessionProvider>
+                  <TherapistHomepage />
+                </SessionProvider>
+              }
+            />
+            <Route
+              path="/user-sessions"
+              element={
+                <SessionProvider>
+                  <UserSessions />
+                </SessionProvider>
+              }
+            />
+
             <Route path="/profile" element={userType === 'therapist' ? <TherapistProfile /> : <UserProfile />} />
             <Route path="/therapists" element={<TherapistList />} />
             <Route path="/mood-tracker" element={<MoodTracker />} />
-            <Route path="/therapist/scheduled" element={<ScheduledSessions />} />
-            <Route path="/therapist/therapistprofile" element={<TherapistProfile/>} />
-            <Route path="/admin/adminhomepage" element={<AdminHomepage/>} />
-            <Route path="/admin/adminprofile" element={<AdminProfile/>} />
-            <Route path="/admin/requestedtherapist" element={<AdminHomepage/>} />
-            <Route path="/admin/userslist" element={<UserList/>} />
-            
-            
           </Routes>
         </Suspense>
       </div>
-      {showFooter && <Footer />}
-      </SessionProvider>
+
+      {showFooter && <Footer />} {/* Footer remains at bottom */}
+    </div>
   );
 };
-
 
 const App = () => {
   const userType = useMemo(() => localStorage.getItem('userType') || 'user', []);

@@ -2,6 +2,7 @@ import React from 'react';
 import { Container, Row, Col, Card, Button, Carousel } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Homepage.css';
+import RazorpayButton from './RazorpayButton';
 
 const Homepage = () => {
 
@@ -314,6 +315,15 @@ const Homepage = () => {
         </div>
       </section>
         
+      </section>
+      {/* Subscribe Section */} 
+      <section className="subscribe-section py-5 text-center bg-light">
+        <Container fluid style={{ backgroundColor: '#ffe4e1', padding: '30px' }}>
+          
+          <h3>Unlock Your Path to Wellness! 🌟 </h3>
+            <br/><p>Subscribe now to access exclusive resources, expert guidance, and a supportive community dedicated to your mental well-being.</p>
+          <RazorpayButton/>
+        </Container>
       </section>
     </Container>
   );
