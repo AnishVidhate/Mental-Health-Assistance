@@ -4,7 +4,6 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { SessionProvider } from './context/SessionContext';
-import AdminDashboard from './components/AdminHomepage';
 import AdminHomepage from './components/AdminHomepage';
 import AdminProfile from './components/AdminProfile';
 import UserList from './components/UserList';
@@ -36,12 +35,13 @@ const AppContent = ({ userType }) => {
   return (
     <SessionProvider> {/* Wrap the entire app content inside SessionProvider */}
       <div className="d-flex flex-column min-vh-100"> {/* Full height container */}
+        <Routes><Route path="/" element={<LandingPage />} /></Routes>
         {showNavbar && <Navbar userType={userType} />}
 
         <div className="main-content flex-grow-1"> {/* Pushes footer to the bottom */}
           <Suspense fallback={<div>Loading...</div>}>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
+            
+              <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/homepage" element={<Homepage />} />

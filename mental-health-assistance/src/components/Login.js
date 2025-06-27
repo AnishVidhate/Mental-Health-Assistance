@@ -1,9 +1,14 @@
+
+
 import React, { useState } from "react";
+import axios from "axios";
 import { Container, Form, Button, Alert, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import "../styles/Login.css";
-
+import config from "../Config/Config";
 const Login = () => {
+
+  const URL=config.BaseURL;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -15,32 +20,32 @@ const Login = () => {
     setLoading(true);
     setError("");
 
-    // Temporary credentials
-    const tempCredentials = {
-      'user': { email: 'user@gmail.com', password: 'user123' },
-      'therapist': { email: 'therapist@gmail.com', password: 'therapist123' },
-      'admin': { email: 'admin@gmail.com', password: 'admin123' }
-    };
+    const apiUrl = `${URL}/Login`; // Unified login API for all roles
 
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await axios.post(apiUrl, { email, password }, { withCredentials: false });
 
-      if (email === tempCredentials.user.email && password === tempCredentials.user.password) {
-        localStorage.setItem('userType', 'user');
-        navigate('/homepage');
-      } else if (email === tempCredentials.therapist.email && password === tempCredentials.therapist.password) {
-        localStorage.setItem('userType', 'therapist');
-        navigate('/therapist/homepage');
-      } else if (email === tempCredentials.admin.email && password === tempCredentials.admin.password) {
-        localStorage.setItem('userType', 'admin');
-        navigate('/admin/AdminHomepage');
-      } 
-      else {
-        throw new Error('Invalid credentials');
+      if (!response.data.role) {
+        throw new Error("Invalid role received from server.");
+      }
+      
+      localStorage.setItem("user", JSON.stringify(response.data));
+      
+      switch (response.data.role.toLowerCase()) {
+        case "admin":
+          navigate("/admin/requestedtherapist");
+          break;
+        case "user":
+          navigate("/homepage");
+          break;
+        case "therapist":
+          navigate("/therapist/homepage");
+          break;
+        default:
+          setError("Unknown role received.");
       }
     } catch (err) {
-      setError('Invalid email or password');
+      setError(err.response?.data || "Invalid email or password.");
     } finally {
       setLoading(false);
     }
@@ -50,7 +55,7 @@ const Login = () => {
     <Container className="login-page d-flex justify-content-center align-items-center">
       <Form className="login-form" onSubmit={handleSubmit}>
         <h3 className="text-center mb-4">Welcome Back</h3>
-        
+
         {error && <Alert variant="danger">{error}</Alert>}
 
         <Form.Group className="mb-3">
@@ -76,23 +81,8 @@ const Login = () => {
           />
         </Form.Group>
 
-        <Button
-          variant="primary"
-          type="submit"
-          className="w-100"
-          disabled={loading}
-        >
-          {loading ? (
-            <Spinner
-              as="span"
-              animation="border"
-              size="sm"
-              role="status"
-              aria-hidden="true"
-            />
-          ) : (
-            "Login"
-          )}
+        <Button variant="primary" type="submit" className="w-100" disabled={loading}>
+          {loading ? <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> : "Login"}
         </Button>
 
         <p className="text-center mt-3">

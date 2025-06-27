@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import AdminNavbar from './AdminNavbar';
 
 const AdminProfile = () => {
+  const storedUser=localStorage.getItem('user');
+  const userName= JSON.parse(storedUser).name;
+  const userEmail= JSON.parse(storedUser).email;
   const navigate = useNavigate();
   const [profile, setProfile] = useState({
-    name: 'Admin User',
-    email: 'admin@example.com',
-    mobileNumber: '9876543210'
+    name: userName,
+    email: userEmail
   });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -54,16 +56,7 @@ const AdminProfile = () => {
                 required
               />
             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Mobile Number</Form.Label>
-              <Form.Control
-                type="text"
-                name="mobileNumber"
-                value={profile.mobileNumber}
-                onChange={handleChange}
-                required
-              />
-            </Form.Group>
+            
             <Button variant="primary" type="submit" className="me-2">
               Save Changes
             </Button>
@@ -76,13 +69,9 @@ const AdminProfile = () => {
             <div className="profile-info">
               <p><strong>Name:</strong> {profile.name}</p>
               <p><strong>Email:</strong> {profile.email}</p>
-              <p><strong>Mobile Number:</strong> {profile.mobileNumber}</p>
+              
             </div>
-            <div className="profile-actions">
-                <Button variant="primary" onClick={() => setIsEditing(true)} className="me-3">
-                    Edit Profile
-                </Button>
-  
+            <div className="profile-actions mt-5">
                 <Button 
                     variant="secondary" 
                     onClick={() => navigate('/admin/adminhomepage')}

@@ -41,13 +41,15 @@ const TherapistHomepage = () => {
     setNewSession({ title: "", date: "", time: "", description: "" });
   };
 
+  // Get today's date in the required format (YYYY-MM-DD)
+  const today = new Date().toISOString().split('T')[0];
+
   return (
     <>
       <TherapistNavbar />
       <Container className="therapist-homepage">
-      <h2 className="text-center mt-5 mb-4 pt-5">Session Requests</h2>
+        <h2 className="text-center mt-5 mb-4 pt-5">Session Requests</h2>
 
-        
         <Table striped bordered hover>
           <thead>
             <tr>
@@ -103,6 +105,7 @@ const TherapistHomepage = () => {
                   type="date"
                   value={newSession.date}
                   onChange={(e) => setNewSession({...newSession, date: e.target.value})}
+                  min={today} // Disable previous dates
                   required
                 />
               </Form.Group>

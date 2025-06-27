@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Carousel } from 'react-bootstrap';
+import { Container, Row, Col, Button, Carousel } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Homepage.css';
 import RazorpayButton from './RazorpayButton';

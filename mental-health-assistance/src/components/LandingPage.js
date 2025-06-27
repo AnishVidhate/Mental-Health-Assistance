@@ -24,19 +24,19 @@ const LandingPage = () => {
             </p>
             <div className="cta-buttons animate__animated animate__fadeInUp animate__delay-2s">
               <Button
-                variant="light"
+                variant="outline-light"
                 size="lg"
                 className="me-3"
                 onClick={() => navigate('/login')}
               >
-                Get Started
+                Sign In
               </Button>
               <Button
-                variant="outline-light"
+                variant="light"
                 size="lg"
                 onClick={() => navigate('/register')}
               >
-                Sign Up
+                Get Started
               </Button>
             </div>
           </Container>
@@ -47,7 +47,7 @@ const LandingPage = () => {
       <section className="features-section py-5">
         <Container>
           <h2 className="text-center mb-5">Our Features</h2>
-          <Row>
+          <Row className="justify-content-center">
             <Col md={4} className="mb-4">
               <div className="feature-card">
                 <img src={Articlephoto} alt="Resource Library" />
@@ -96,6 +96,7 @@ const LandingPage = () => {
             variant="primary"
             size="lg"
             onClick={() => navigate('/register')}
+            className="btn btn-primary"
           >
             Sign Up Now
           </Button>
