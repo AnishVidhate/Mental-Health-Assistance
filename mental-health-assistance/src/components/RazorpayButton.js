@@ -1,59 +1,101 @@
-import React from "react";
+import React, { useEffect } from "react";
+import axios from "axios";
+import config from "../Config/Config";
 
-const RazorpayButton = ({ amount, description }) => {
-  const handlePayment = () => {
+const RazorpayButton = () => {
+  const URL = config.BaseURL;
 
-    const options = {
-      key: "rzp_test_rZfdStCvfRhs", // Replace with your Razorpay key
-      amount: 100, // Amount in paise (₹1 = 100 paise)
-      currency: "INR",
-      name: "MindCare",
-      description: "Invest in yourself today!",
-      image: "https://your-logo-url.com/logo.png", // Optional
-      handler: function (response) {
-        alert(`Payment Successful! Payment ID: ${response.razorpay_payment_id}`);
-      },
-      prefill: {
-        name: "User Name",
-        email: "user@example.com",
-        contact: "9999999999",
-      },
-      theme: {
-        color: "#3399cc",
-      },
-      method: {
-        upi: true, // Enable UPI payments
-      },
-    };
-    
-
-    // const options = {
-    //   key: "rzp_test_rZfdStCvfRhsxH", // Replace with your Razorpay key
-    //   amount: 1 * 100, // Amount in paise (₹1 = 100 paise)
-    //   currency: "INR",
-    //   name: "MindCare",
-    //   description: "Prioritize your well-being with MindCare—your personalized path to mental wellness. Gain access to expert guidance, stress management tools, and self-care resources designed to help you thrive. Invest in yourself today!",
-    //   image: "https://your-logo-url.com/logo.png", // Optional
-    //   handler: function (response) {
-    //     alert(`Payment Successful! Payment ID: ${response.razorpay_payment_id}`);
-    //   },
-    //   prefill: {
-    //     name: "User Name",
-    //     email: "user@example.com",
-    //     contact: "9999999999",
-    //   },
-    //   theme: {
-    //     color: "#3399cc",
-    //   },
-    // };
-
-    const razorpay = new window.Razorpay(options);
-    razorpay.open();
+  const loadRazorpayScript = (src) => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
   };
 
+  const handlePayment = async () => {
+    try {
+      
+      const storedUser = localStorage.getItem('user');
+     
+
+      const userId = JSON.parse(storedUser).id;
+      const paymentAmount = 5000; // 
+  
+      const orderResponse = await axios.post(`${URL}/payment/createorder`, {
+        userId: userId,
+        amount: paymentAmount, // 
+        currency: "INR",
+      });
+  
+      if (!orderResponse.data.orderId) {
+        throw new Error("Order ID missing in response");
+      }
+  
+      const { orderId } = orderResponse.data;
+  
+      
+      const options = {
+        key: "rzp_test_rZfdStCvfRhsxH",
+        name: "Mind Care",
+        description: "Test Transaction",
+        order_id: orderId,
+        amount: paymentAmount * 100, 
+        handler: async (response) => {
+          try {
+            const paymentData = {
+              userId: userId,  
+              amount: paymentAmount,  
+              paymentDate: new Date().toISOString(),  
+              referenceId: response.razorpay_payment_id,  
+              orderId: response.razorpay_order_id,
+            };
+            
+            await axios.post(`${URL}/payment/savepayment`, paymentData); 
+            await axios.post(`${URL}/DepositPlans`, paymentData);
+            alert('Payment Successful! Details have been saved.');
+  
+          } catch (error) {
+          }
+        },
+        prefill: {
+          name: "",
+          email: "",
+          contact: "1100900009",
+        },
+        notes: {
+          address: "Razorpay Corporate Office",
+        },
+        theme: {
+          color: "#3399cc",
+        },
+      };
+  
+      const rzp1 = new window.Razorpay(options);
+  
+      rzp1.on('payment.failed', (response) => {
+        alert(`Payment failed: ${response.error.description}`);
+      });
+  
+      rzp1.open();
+  
+    } catch (error) {
+      console.error('Error during payment process:', error);
+      alert('Error creating order or fetching user details.');
+    }
+  };
+  
+
+  useEffect(() => {
+    loadRazorpayScript('https://checkout.razorpay.com/v1/checkout.js')
+      .catch(() => alert("Failed to load Razorpay SDK"));
+  }, []);
+  
   return (
-    <button className="btn btn-danger mt-2" onClick={handlePayment}>
-      Buy subscription
+    <button onClick={handlePayment} style={{ padding: "10px 20px", background: "#008CBA", color: "#fff", border: "none", borderRadius: "5px", cursor: "pointer" }}>
+      Pay Now
     </button>
   );
 };

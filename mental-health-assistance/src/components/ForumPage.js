@@ -1,63 +1,53 @@
-import React, { useState } from 'react';
-import { FaThumbsUp } from 'react-icons/fa';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Container, Button, Card } from 'react-bootstrap';
-import '../styles/ForumPage.css';
-
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
+import config from "../Config/Config";
 const ForumPage = () => {
-  const navigate = useNavigate();
-  const { forumId } = useParams(); // Get the forum ID from the URL
-  const [forums, setForums] = useState([
-    { id: 1, title: 'Mental Health Tips', description: 'Share your daily tips for mental health improvement!', likes: 12 },
-    { id: 2, title: 'Anxiety Support', description: 'Discuss and find support for anxiety management.', likes: 8 },
-    { id: 3, title: 'Motivational Stories', description: 'Share and read inspiring stories!', likes: 15 },
-    { id: 4, title: 'Insecurities', description: 'Talk about personal struggles and overcome insecurities.', likes: 10 },
-    { id: 5, title: 'Self-Help', description: 'Discuss self-help books, courses, and strategies.', likes: 7 },
-    { id: 6, title: 'Meditation', description: 'Share your meditation techniques and experiences.', likes: 11 },
-    { id: 7, title: 'Self-Confidence', description: 'Boost your self-esteem with shared experiences.', likes: 9 },
-  ]);
+  const URL = config.BaseURL;
+  const [forums, setForums] = useState([]);
 
-  const handleLike = (id) => {
-    setForums(forums.map(forum => 
-      forum.id === id ? { ...forum, likes: forum.likes + 1 } : forum
-    ));
+useEffect(() => {
+  const fetchForums = async () => {
+    try {
+      const response = await axios.get(`${URL}/CreateForums`);
+      setForums(response.data);
+    } catch (error) {
+      console.error("Error fetching forums:", error.response?.data || error.message);
+    }
   };
 
-  const handleCreateForum = () => {
-    navigate('/create-forum'); // Navigate to CreateForum page
-  };
+  fetchForums();
+}, [URL]); 
 
-  const handleChat = (id) => {
-    navigate(`/chat/${id}`); // Navigate to ChatPage for the selected forum
-  };
 
   return (
-    <Container className="forum-page mt-4">
-      <h2 className="text-center mb-4">Community Forums</h2>
-      <div className="text-right mb-3">
-        <Button variant="primary" onClick={handleCreateForum}>
-          Create New Forum
-        </Button>
-      </div>
-      <div className="forum-list">
-        {forums.map(forum => (
-          <Card key={forum.id} className="mb-3">
-            <Card.Body>
-              <Card.Title>{forum.title}</Card.Title>
-              <Card.Text>{forum.description}</Card.Text>
-              <div className="d-flex justify-content-between align-items-center">
-                <Button variant="light" onClick={() => handleLike(forum.id)}>
-                  <FaThumbsUp /> {forum.likes}
-                </Button>
-                <Button variant="secondary" onClick={() => handleChat(forum.id)}>
-                  Chat
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        ))}
-      </div>
-    </Container>
+    <div className="forum-page container mt-4">
+      <h2 className="text-center mb-4">Forums</h2>
+      <Link to="/create-forum" className="btn btn-primary mb-3">
+        Create Forum
+      </Link>
+      <ul className="list-group">
+        {forums.length > 0 ? (
+          forums.map((forum) => (
+            <li
+              key={forum.id}
+              className="list-group-item mb-3 p-3 shadow-sm rounded"
+            >
+              <h5>{forum.title}</h5>
+              <p>{forum.description}</p>
+              <Link
+                to={`/chat/${forum.id}`}
+                className="btn btn-outline-primary btn-sm mt-2"
+              >
+                Chat
+              </Link>
+            </li>
+          ))
+        ) : (
+          <p>No forums available.</p>
+        )}
+      </ul>
+    </div>
   );
 };
 

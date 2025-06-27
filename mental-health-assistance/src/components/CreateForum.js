@@ -1,17 +1,33 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import config from "../Config/Config";
 const CreateForum = () => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const URL=config.BaseURL;
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const navigate = useNavigate();
+  
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Logic to save the forum (e.g., API call)
-    console.log('New Forum Created:', { title, description });
-    navigate('/forums'); // Redirect back to forums page
-  }; //hi
+
+    const forumData = {
+      title,
+      description,
+      createdBy: 1, // Replace with actual user ID
+    };
+
+    try {
+      const response = await axios.post(`${URL}/CreateForums`, forumData);
+      
+      if (response.status === 201) {
+        navigate("/forums");
+      }
+    } catch (error) {
+      console.error("Error creating forum:", error.response?.data || error.message);
+    }
+  };
 
   return (
     <div className="create-forum container mt-4">
@@ -46,35 +62,3 @@ const CreateForum = () => {
 };
 
 export default CreateForum;
-
-
-
-// when db is connected 
-
-//Replace the placeholder console.log() in the handleSubmit function with an API call to create the forum.
-
-// const handleSubmit = async (e) => {
-//     e.preventDefault();
-  
-//     const forumData = { title, description, created_by: 1 }; // Assuming user ID is 1 for now
-  
-//     try {
-//       const response = await fetch('http://localhost:5000/api/forums', {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify(forumData),
-//       });
-  
-//       if (response.ok) {
-//         console.log('Forum created successfully');
-//         navigate('/forums');
-//       } else {
-//         console.error('Failed to create forum');
-//       }
-//     } catch (error) {
-//       console.error('Error creating forum:', error);
-//     }
-//   };
-  

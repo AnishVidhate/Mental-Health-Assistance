@@ -1,39 +1,60 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
 
 const ChatPage = () => {
-  const { forumId } = useParams(); // Extract forum ID from the URL
-  const [forumDetails, setForumDetails] = useState({
-    title: 'Sample Forum Title',
-    description: 'This is a description of the forum where people can discuss mental health topics.',
+  const { forumId } = useParams(); // Extract forum ID from URL
+  const [forumDetails] = useState({
+    title: "Sample Forum Title",
+    description:
+      "This is a description of the forum where people can discuss mental health topics.",
   });
-  const [messages, setMessages] = useState([
-    { user: 'John Doe', content: 'This is the first message.', timestamp: '2024-12-21T10:30:00Z' },
-    { user: 'Jane Smith', content: 'I totally agree with this!', timestamp: '2024-12-21T11:00:00Z' },
-  ]);
-  const [newMessage, setNewMessage] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
 
-  useEffect(() => {
-    console.log(`Fetching forum details for forumId: ${forumId}`);
-  }, [forumId]);
+  const API_BASE_URL = "https://localhost:44364/api";
 
-  const handleSendMessage = () => {
+  // Fetch chats from API
+useEffect(() => {
+  const fetchMessages = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/Chats/${forumId}`);
+      setMessages(response.data);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    }
+  };
+
+  fetchMessages();
+}, [forumId]);
+
+  // Send new message via POST API
+  const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
 
-    const newMessageData = {
-      user: 'You',
-      content: newMessage,
-      timestamp: new Date().toISOString(),
+    const messagePayload = {
+      forumId: parseInt(forumId),
+      userId: 2, // Replace with actual logged-in user's ID
+      message: newMessage,
     };
 
-    setMessages((prevMessages) => [...prevMessages, newMessageData]);
-    setNewMessage('');
+
+    try {
+      await axios.post(`${API_BASE_URL}/Chats`, messagePayload);
+      // Re-fetch messages after sending
+      const response = await axios.get(`${API_BASE_URL}/Chats/${forumId}`);
+      setMessages(response.data);
+      setNewMessage("");
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
   };
 
   return (
     <div className="chat-page container mt-4">
       <h2 className="text-center mb-4">{forumDetails.title}</h2>
       <p>{forumDetails.description}</p>
+
       <div className="new-message mt-4">
         <textarea
           className="form-control mb-2"
@@ -46,28 +67,31 @@ const ChatPage = () => {
           Send
         </button>
       </div>
-      <br></br><br></br>
+
+      <br />
+      <br />
+
       <div className="chat-section">
         <h5>Chats</h5>
         <div className="messages-list">
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className="message-item border rounded p-3 mb-3"
-              style={{
-                backgroundColor: '#f8f9fa',
-                boxShadow: '0px 2px 5px rgba(0,0,0,0.1)',
-              }}
-            >
-              <strong>{message.user}</strong>
-              <p className="mb-1">{message.content}</p>
-              <div className="text-muted small">{new Date(message.timestamp).toLocaleString()}</div>
-            </div>
-          ))}
+          {messages.length > 0 ? (
+            messages.map((resp, index) => (
+              <div
+                key={index}
+                className="message-item border rounded p-3 mb-3"
+                style={{
+                  backgroundColor: "#f8f9fa",
+                  boxShadow: "0px 2px 5px rgba(0,0,0,0.1)",
+                }}
+              >
+                <p className="mb-1">{resp.message}</p>
+              </div>
+            ))
+          ) : (
+            <p>No chats available.</p>
+          )}
         </div>
       </div>
-
-      
     </div>
   );
 };

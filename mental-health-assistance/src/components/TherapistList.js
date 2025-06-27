@@ -1,104 +1,126 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Card, Button, Row, Col, Modal } from 'react-bootstrap';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Container, Card, Button, Row, Col, Modal } from "react-bootstrap";
+import RazorpayButton from "./RazorpayButton";
+import config from "../Config/Config";
 
-// Sample therapists data
-const therapists = [
-  {
-    id: 1,
-    name: 'Dr. Anish V',
-    specialization: 'Clinical Psychology',
-    experience: 10,
-    availability: 'Mon-Fri, 9am-5pm',
-    image: "https://cdn-icons-png.flaticon.com/512/3063/3063015.png"
-  },
-  {
-    id: 2,
-    name: 'Dr. Harsh J',
-    specialization: 'Cognitive Behavioral Therapy',
-    experience: 8,
-    availability: 'Tue-Sat, 10am-6pm',
-    image: "https://cdn-icons-png.flaticon.com/512/3063/3063015.png"
-  },
-  {
-    id: 3,
-    name: 'Dr. Vardhan N',
-    specialization: 'Human Behaviour',
-    experience: 12,
-    availability: 'Mon-Thu, 8am-4pm',
-    image: "https://cdn-icons-png.flaticon.com/512/3063/3063015.png"
-  }
-];
 
 const TherapistList = () => {
-  // State for managing subscription status and modal visibility
+
+  const URL=config.BaseURL;
+  const [therapists, setTherapists] = useState([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedTherapist, setSelectedTherapist] = useState(null);
 
-  // Fetch the subscription status from backend
+  useEffect(() => {
+    const fetchTherapists = async () => {
+      try {
+        const response = await axios.get(`${URL}/Therapist`);
+        setTherapists(response.data);
+      } catch (error) {
+        console.error("Error fetching therapists:", error);
+      }
+    };
+
+    fetchTherapists();
+  }, [URL]);
+
   useEffect(() => {
     const fetchSubscriptionStatus = async () => {
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+      const userId = storedUser?.id;
+
+      if (!userId) {
+        console.error("No user ID found in localStorage");
+        return;
+      }
+
       try {
-        // Simulate fetching subscription status (replace with actual API call)
-        const response = await fetch('/api/get-subscription-status'); // Replace with your backend API
-        const data = await response.json();
-        setIsSubscribed(data.isSubscribed);
+        const response = await axios.get(`${URL}/SubscriptionControllerCheck/check/${userId}`);
+        setIsSubscribed(response.data === true);
       } catch (error) {
-        console.error("Error fetching subscription status", error);
+        console.error("Error fetching subscription status:", error);
+        setIsSubscribed(false);
       }
     };
 
     fetchSubscriptionStatus();
-  }, []);
+  }, [URL]);
 
-  // Handle button click
+  const handleRequestSession = async (therapist) => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    const userId = storedUser?.id;
+
+    if (!userId) {
+      alert("User not found! Please log in.");
+      return;
+    }
+
+    const sessionData = {
+      UserId: userId,
+      TherapistId: therapist.id,
+      TherapistName: therapist.name,
+      DateTime: new Date().toISOString(),
+      Status: "Pending",
+    };
+
+    try {
+      const response = await axios.post(`${URL}/Sessions/create`, sessionData);
+      if (response.status === 201) {
+        alert(`Session request sent successfully to ${therapist.name}`);
+      }
+    } catch (error) {
+      console.error("Error creating session:", error);
+      alert("Failed to request session. Please try again.");
+    }
+  };
+
   const handleButtonClick = (therapist) => {
     if (!isSubscribed) {
       setSelectedTherapist(therapist);
       setShowModal(true);
     } else {
-      alert(`Session request sent to ${therapist.name}`);
+      handleRequestSession(therapist);
     }
   };
 
-  // Close the modal
   const closeModal = () => {
     setShowModal(false);
     setSelectedTherapist(null);
-  };
-
-  // Handle subscription redirection
-  const handleSubscribe = () => {
-    alert('Redirecting to subscription page...');
-    closeModal();
   };
 
   return (
     <Container className="therapist-list mt-5">
       <h2 className="text-center mb-4">Available Therapists</h2>
       <Row>
-        {therapists.map(therapist => (
+        {therapists.map((therapist) => (
           <Col key={therapist.id} md={4} className="mb-4">
             <Card>
-              {/* Smaller image size with inline styles */}
-              <Card.Img 
-                variant="top" 
-                src={therapist.image}
+              <Card.Img
+                variant="top"
+                src={therapist.image || "https://cdn-icons-png.flaticon.com/512/3063/3063015.png"}
                 alt={therapist.name}
-                style={{ width: '100%', height: '200px', objectFit: 'cover' }} // Adjusted image size
+                style={{
+                  width: "150px",
+                  height: "150px",
+                  objectFit: "contain",
+                  display: "block",
+                  margin: "15px auto",
+                }}
               />
               <Card.Body>
                 <Card.Title>{therapist.name}</Card.Title>
                 <Card.Text>
-                  <strong>Specialization:</strong> {therapist.specialization}<br />
-                  <strong>Experience:</strong> {therapist.experience} years<br />
-                  <strong>Availability:</strong> {therapist.availability}
+                  <strong>Specialization:</strong> {therapist.specialization}
+                  <br />
+                  <strong>Experience:</strong> {therapist.yearsOfExperience} years
+                  <br />
                 </Card.Text>
-                <Button 
-                  variant="primary" 
+                <Button
+                  variant={isSubscribed ? "success" : "danger"}
                   className="w-100"
                   onClick={() => handleButtonClick(therapist)}
-                  disabled={!isSubscribed}
                 >
                   {isSubscribed ? "Request Session" : "Subscribe to Request"}
                 </Button>
@@ -108,22 +130,19 @@ const TherapistList = () => {
         ))}
       </Row>
 
-      {/* Modal for unsubscribed users */}
+      {/* Subscription Modal */}
       <Modal show={showModal} onHide={closeModal}>
         <Modal.Header closeButton>
           <Modal.Title>Oops! Subscription Required</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>It looks like you're not subscribed yet. You need to subscribe to book a session with {selectedTherapist?.name}. It’s easy and quick!</p>
-          <p>Click below to unlock access to personalized therapy sessions and more benefits.</p>
+          <p>You need to subscribe to book a session with {selectedTherapist?.name}.</p>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={closeModal}>
             Close
           </Button>
-          <Button variant="primary" onClick={handleSubscribe}>
-            Go to Subscription
-          </Button>
+          <RazorpayButton />
         </Modal.Footer>
       </Modal>
     </Container>

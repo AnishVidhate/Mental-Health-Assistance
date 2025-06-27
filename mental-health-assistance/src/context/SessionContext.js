@@ -41,7 +41,7 @@ export const SessionProvider = ({ children }) => {
   );
 };
 
-// ✅ Corrected: Create a custom hook
+//  Corrected: Create a custom hook
 export const useSessionContext = () => {
   return useContext(SessionContext);
 };
