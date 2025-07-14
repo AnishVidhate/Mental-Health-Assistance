@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import config from '../Config/Config';
 import axios from "axios";
 
 const ChatPage = () => {
@@ -12,7 +13,7 @@ const ChatPage = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
 
-  const API_BASE_URL = "https://localhost:44364/api";
+  const API_BASE_URL = config.BaseURL;
 
   // Fetch chats from API
 useEffect(() => {
