@@ -1,47 +1,91 @@
-import React, { createContext, useContext, useState } from "react";
-
+import React, { createContext, useState, useEffect, useContext } from "react";
+import axios from "axios";
+import config from "../Config/Config";
 export const SessionContext = createContext();
 
 export const SessionProvider = ({ children }) => {
-  const [sessionRequests, setSessionRequests] = useState([
-
-    {
-      id: 1,
-      patientName: "John Doe",
-      requestedDate: "2023-10-15",
-      description: "Anxiety management session"
-    },
-    {
-      id: 2,
-      patientName: "Jane Smith",
-      requestedDate: "2023-10-16",
-      description: "Stress coping strategies"
-    }
-
-  ]);
+  const [sessionRequests, setSessionRequests] = useState([]);
   const [scheduledSessions, setScheduledSessions] = useState([]);
+  
+  const userStr=localStorage.getItem("user");
+  const user= userStr ? JSON.parse(userStr) : null;
+  const therapistId = user.id; 
+  const URL = config.BaseURL;
 
-  const scheduleSession = (sessionDetails) => {
-    setScheduledSessions([...scheduledSessions, sessionDetails]);
-    setSessionRequests(sessionRequests.filter(req => req.id !== sessionDetails.id));
+  const fetchSessions = async () => {
+    try {
+      const res = await axios.get(`${URL}/Sessions/${therapistId}`);
+      const sessions = Array.isArray(res.data) ? res.data : [res.data];
+
+      const enrichedSessions = await Promise.all(
+        sessions.map(async (session) => {
+          const userRes = await axios.get(`${URL}/users/${session.userId}`);
+          const patient = userRes.data;
+
+          const dateTime = new Date(session.dateTime);
+          const date = dateTime.toISOString().split("T")[0];
+          const time = dateTime.toTimeString().split(":").slice(0, 2).join(":");
+
+          return {
+            id: session.id,
+            userId: session.userId,
+            patientName: patient.name,
+            title: session.title || "",
+            date,
+            time,
+            description: `Status: ${session.status}`,
+            sessionInfo: session,
+            patientInfo: patient,
+            status: session.status,
+          };
+        })
+      );
+
+      setSessionRequests(
+        enrichedSessions.filter((s) => s.status === "Pending")
+      );
+      setScheduledSessions(
+        enrichedSessions.filter((s) => s.status === "Scheduled")
+      );
+    } catch (error) {
+      console.error("Error fetching sessions or users:", error);
+    }
   };
+  useEffect(() => {
+    fetchSessions();
+  }, [therapistId]);
 
-  const rescheduleSession = (sessionId, updatedDetails) => {
-    setScheduledSessions((prevSessions) =>
-      prevSessions.map((session) =>
-        session.id === sessionId ? { ...session, ...updatedDetails } : session
-      )
+  const rescheduleSession = (sessionId, updatedData) => {
+    setScheduledSessions((prev) =>
+      prev.map((s) => (s.id === sessionId ? { ...s, ...updatedData } : s))
     );
   };
 
+  const scheduleSession = async (sessionId, updatedData) => {
+    try {
+      await axios.put(`${URL}/Sessions/schedule/${sessionId}`, updatedData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
+      console.error("Error scheduling session:", error);
+    }
+  };
+
   return (
-    <SessionContext.Provider value={{ sessionRequests, scheduledSessions, scheduleSession, rescheduleSession }}>
+    <SessionContext.Provider
+      value={{
+        sessionRequests,
+        scheduledSessions,
+        scheduleSession,
+        rescheduleSession,
+        fetchSessions,
+      }}
+    >
       {children}
     </SessionContext.Provider>
   );
 };
 
-//  Corrected: Create a custom hook
-export const useSessionContext = () => {
-  return useContext(SessionContext);
-};
+export const useSessionContext = () => useContext(SessionContext);

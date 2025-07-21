@@ -6,6 +6,7 @@ import { Container, Form, Button, Alert, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import "../styles/Login.css";
 import config from "../Config/Config";
+
 const Login = () => {
 
   const URL=config.BaseURL;
@@ -24,13 +25,21 @@ const Login = () => {
 
     try {
       const response = await axios.post(apiUrl, { email, password }, { withCredentials: false });
-
+      const SubscriptionCheck = await axios.get(`${URL}/SubscriptionControllerCheck/check/${response.data.id}`);
+      if(SubscriptionCheck.data){
+        localStorage.setItem("isSubscribed", true);
+      }
+      else{
+        localStorage.setItem("isSubscribed", false);
+      }
       if (!response.data.role) {
         throw new Error("Invalid role received from server.");
       }
       
       localStorage.setItem("user", JSON.stringify(response.data));
-      
+      console.log("user response.data:::",response.data);
+      localStorage.setItem("userType",response.data.role);
+      console.log("role :",response.data.role);
       switch (response.data.role.toLowerCase()) {
         case "admin":
           navigate("/admin/requestedtherapist");

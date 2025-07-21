@@ -11,8 +11,10 @@ const CustomNavbar = () => {
 
   // Check subscription status on component mount
   useEffect(() => {
-    const subscriptionStatus = localStorage.getItem('isSubscribed') === 'true';
-    setIsSubscribed(subscriptionStatus);
+    const subscriptionStatus = localStorage.getItem('isSubscribed');
+    if(subscriptionStatus==="true"){
+      setIsSubscribed(true);
+    }
   }, []);
 
   const handleToggle = (isOpen) => {
