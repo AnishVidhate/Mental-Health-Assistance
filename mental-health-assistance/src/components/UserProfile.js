@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Container, Form, Button, Card } from "react-bootstrap";
+import { Container, Form, Button, Card, Navbar } from "react-bootstrap";
 
 const UserProfile = () => {
   const storedUser= localStorage.getItem('user');
@@ -31,6 +31,7 @@ const UserProfile = () => {
   };
 
   return (
+    <div>
     <Container className="user-profile mt-5 d-flex justify-content-center">
       <Card className="shadow-lg p-4" style={{ width: "50%", borderRadius: "15px" }}>
         <Card.Body>
@@ -81,6 +82,7 @@ const UserProfile = () => {
         </Card.Body>
       </Card>
     </Container>
+    </div>
   );
 };
 

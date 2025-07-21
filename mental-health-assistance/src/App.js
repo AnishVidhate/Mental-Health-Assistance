@@ -23,13 +23,18 @@ const TherapistList = lazy(() => import('./components/TherapistList'));
 const MoodTracker = lazy(() => import('./components/MoodTracker'));
 const TherapistHomepage = lazy(() => import('./components/TherapistHomepage'));
 const UserSessions = lazy(() => import('./components/UserSessions'));
-const ScheduledSessions = lazy(() => import('./components/ScheduledSessions'));
+const ScheduledSessions = lazy(() =>
+  import('./components/ScheduledSessions').then((module) => {
+    console.log("ScheduledSessions module:", module);
+    return module;
+  })
+);
 
 const AppContent = ({ userType }) => {
   const location = useLocation();
 
   const noNavbarPaths = ['/', '/login', '/register'];
-  const showNavbar = !noNavbarPaths.includes(location.pathname) && !location.pathname.startsWith('/therapist/homepage') && !location.pathname.startsWith('/admin/');
+  const showNavbar = !noNavbarPaths.includes(location.pathname) &&  !location.pathname.startsWith('/admin/');
   const showFooter = !noNavbarPaths.includes(location.pathname);
 
   return (

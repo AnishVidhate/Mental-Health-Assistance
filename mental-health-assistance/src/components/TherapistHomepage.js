@@ -1,18 +1,19 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { Container, Button, Table, Modal, Form } from "react-bootstrap";
 import TherapistNavbar from "./TherapistNavbar";
 import { SessionContext } from "../context/SessionContext";
 import "./Homepage.css";
 
 const TherapistHomepage = () => {
-  const { sessionRequests, scheduleSession } = useContext(SessionContext);
+  const { sessionRequests, scheduleSession, fetchSessions } = useContext(SessionContext);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  console.log("sessionRequests ::",sessionRequests);
   const [newSession, setNewSession] = useState({
     title: "",
     date: "",
     time: "",
-    description: ""
+    description: "",
   });
 
   const handleCreateSession = (request) => {
@@ -20,73 +21,85 @@ const TherapistHomepage = () => {
     setShowCreateModal(true);
   };
 
-  const handleSessionSubmit = (e) => {
+  useEffect(()=>{
+    fetchSessions();
+  },[])
+  const handleSessionSubmit = async (e) => {
     e.preventDefault();
-    
-    // Create session object
+
+    const scheduledDateTime = new Date(`${newSession.date}T${newSession.time}`);
+
     const newScheduledSession = {
-      id: selectedRequest.id, // Use the same ID to track it
-      patientName: selectedRequest.patientName,
-      title: newSession.title,
-      date: newSession.date,
-      time: newSession.time,
-      description: newSession.description
+      userId: selectedRequest.userId, // Must match .NET model
+      therapistId: selectedRequest.sessionInfo.therapistId,
+      therapistName: selectedRequest.sessionInfo.therapistName,
+      dateTime: scheduledDateTime,
+      status: "Scheduled",
     };
 
-    // Schedule the session and remove from requests
-    scheduleSession(newScheduledSession);
-    
-    // Close modal and reset form
+    await scheduleSession(selectedRequest.id, newScheduledSession);
+    console.log("Final payload before sending:", selectedRequest);
+
     setShowCreateModal(false);
     setNewSession({ title: "", date: "", time: "", description: "" });
+
+    fetchSessions();
   };
 
-  // Get today's date in the required format (YYYY-MM-DD)
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
 
   return (
     <>
       <TherapistNavbar />
       <Container className="therapist-homepage">
         <h2 className="text-center mt-5 mb-4 pt-5">Session Requests</h2>
-
         <Table striped bordered hover>
           <thead>
             <tr>
               <th>Patient Name</th>
               <th>Requested Date</th>
-              <th>Description</th>
+              <th>Requested Time</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {sessionRequests.length > 0 ? (
-              sessionRequests.map(request => (
-                <tr key={request.id}>
-                  <td>{request.patientName}</td>
-                  <td>{request.requestedDate}</td>
-                  <td>{request.description}</td>
-                  <td>
-                    <Button 
-                      variant="primary"
-                      onClick={() => handleCreateSession(request)}
-                    >
-                      Create Session
-                    </Button>
-                  </td>
-                </tr>
-              ))
+              sessionRequests.map((request) => {
+                const date = new Date(request.requestedDate);
+                return (
+                  <tr key={request.id}>
+                    <td>{request.patientName}</td>
+                    <td>
+                      {request.date}
+                    </td>
+                    <td>
+                      {request.time}
+                    </td>
+                    <td>
+                      <Button
+                        variant="primary"
+                        onClick={() => handleCreateSession(request)}
+                      >
+                        Create Session
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
-                <td colSpan="4" className="text-center">No session requests available.</td>
+                <td colSpan="4">No session requests</td>
               </tr>
             )}
           </tbody>
         </Table>
 
+        {/* Create Session Modal */}
         <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)}>
           <Modal.Header closeButton>
-            <Modal.Title>Create Session for {selectedRequest?.patientName}</Modal.Title>
+            <Modal.Title>
+              Create Session for {selectedRequest?.patientName}
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form onSubmit={handleSessionSubmit}>
@@ -95,7 +108,9 @@ const TherapistHomepage = () => {
                 <Form.Control
                   type="text"
                   value={newSession.title}
-                  onChange={(e) => setNewSession({...newSession, title: e.target.value})}
+                  onChange={(e) =>
+                    setNewSession({ ...newSession, title: e.target.value })
+                  }
                   required
                 />
               </Form.Group>
@@ -104,8 +119,10 @@ const TherapistHomepage = () => {
                 <Form.Control
                   type="date"
                   value={newSession.date}
-                  onChange={(e) => setNewSession({...newSession, date: e.target.value})}
-                  min={today} // Disable previous dates
+                  onChange={(e) =>
+                    setNewSession({ ...newSession, date: e.target.value })
+                  }
+                  min={today}
                   required
                 />
               </Form.Group>
@@ -114,7 +131,9 @@ const TherapistHomepage = () => {
                 <Form.Control
                   type="time"
                   value={newSession.time}
-                  onChange={(e) => setNewSession({...newSession, time: e.target.value})}
+                  onChange={(e) =>
+                    setNewSession({ ...newSession, time: e.target.value })
+                  }
                   required
                 />
               </Form.Group>
@@ -124,7 +143,12 @@ const TherapistHomepage = () => {
                   as="textarea"
                   rows={3}
                   value={newSession.description}
-                  onChange={(e) => setNewSession({...newSession, description: e.target.value})}
+                  onChange={(e) =>
+                    setNewSession({
+                      ...newSession,
+                      description: e.target.value,
+                    })
+                  }
                   required
                 />
               </Form.Group>

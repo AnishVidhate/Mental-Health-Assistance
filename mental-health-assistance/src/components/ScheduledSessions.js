@@ -1,123 +1,108 @@
-import React, { useState } from "react";
-import { Container, Table, Button, Modal, Form } from "react-bootstrap";
-import TherapistNavbar from "./TherapistNavbar";
+import React, { useState,useEffect } from "react";
 import { useSessionContext } from "../context/SessionContext";
+import { Container, Table, Button, Alert, Modal, Toast, ToastContainer } from "react-bootstrap";
+import TherapistHomepage from "./TherapistHomepage";
+import TherapistNavbar from "./TherapistNavbar";
 
 const ScheduledSessions = () => {
-  const { scheduledSessions, rescheduleSession } = useSessionContext();
-  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
-  const [selectedSession, setSelectedSession] = useState(null);
-  const [updatedSession, setUpdatedSession] = useState({
-    title: "",
-    date: "",
-    time: "",
-    description: ""
-  });
+  const { scheduledSessions,fetchSessions } = useSessionContext();
 
-  // Open Reschedule Modal
-  const handleReschedule = (session) => {
+  const [showModal, setShowModal] = useState(false);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [showToast, setShowToast] = useState(false);
+
+  useEffect(() => {
+    fetchSessions(); 
+  }, []);
+
+  const handleShow = (session) => {
     setSelectedSession(session);
-    setUpdatedSession({ ...session });
-    setShowRescheduleModal(true);
+    setShowModal(true);
   };
 
-  // Submit Reschedule Changes
-  const handleRescheduleSubmit = (e) => {
-    e.preventDefault();
-    rescheduleSession(selectedSession.id, updatedSession);
-    setShowRescheduleModal(false);
+  const handleClose = () => {
+    setSelectedSession(null);
+    setShowModal(false);
+  };
+
+  const handleSendConfirmation = () => {
+    setShowModal(false);
+    setShowToast(true);
   };
 
   return (
-    <>
-      <TherapistNavbar />
-      <Container className="scheduled-sessions mt-5">
-        <h2 className="text-center mb-4">Scheduled Sessions</h2>
-        {scheduledSessions.length > 0 ? (
-          <Table striped bordered hover>
-            <thead>
-              <tr>
-                <th>Patient Name</th>
-                <th>Session Title</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Description</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {scheduledSessions.map((session, index) => (
-                <tr key={index}>
-                  <td>{session.patientName}</td>
-                  <td>{session.title}</td>
-                  <td>{session.date}</td>
-                  <td>{session.time}</td>
-                  <td>{session.description}</td>
-                  <td>
-                    <Button variant="warning" onClick={() => handleReschedule(session)}>
-                      Reschedule
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        ) : (
-          <p className="text-center">No sessions scheduled yet.</p>
-        )}
-      </Container>
+    <div>
 
-      {/* Reschedule Modal */}
-      <Modal show={showRescheduleModal} onHide={() => setShowRescheduleModal(false)}>
+    <TherapistNavbar/>
+    <Container className="mt-4 main-content">
+      <h2 className="mb-4 text-primary">Scheduled Sessions</h2>
+
+      {scheduledSessions.length === 0 ? (
+        <Alert variant="warning">No scheduled sessions.</Alert>
+      ) : (
+        <Table striped bordered hover className="shadow-sm">
+          <thead className="table-info text-center">
+            <tr>
+              <th>Patient Name</th>
+              <th>Scheduled Date & Time</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody className="text-center">
+            {scheduledSessions.map((session) => (
+              <tr key={session.id}>
+                <td>{session.patientName}</td>
+                <td>{`${session.date} ${session.time}`}</td>
+                <td>
+                  <span className={`badge ${session.status === "Scheduled" ? "bg-success" : "bg-warning text-dark"}`}>
+                    {session.status}
+                  </span>
+                </td>
+                <td>
+                  <Button variant="info" onClick={() => handleShow(session)}>
+                    View Details
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
+
+      {/* Session Details Modal */}
+      <Modal show={showModal} onHide={handleClose} centered>
         <Modal.Header closeButton>
-          <Modal.Title>Reschedule Session for {selectedSession?.patientName}</Modal.Title>
+          <Modal.Title>Session Details</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form onSubmit={handleRescheduleSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>Session Title</Form.Label>
-              <Form.Control
-                type="text"
-                value={updatedSession.title}
-                onChange={(e) => setUpdatedSession({ ...updatedSession, title: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Date</Form.Label>
-              <Form.Control
-                type="date"
-                value={updatedSession.date}
-                onChange={(e) => setUpdatedSession({ ...updatedSession, date: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Time</Form.Label>
-              <Form.Control
-                type="time"
-                value={updatedSession.time}
-                onChange={(e) => setUpdatedSession({ ...updatedSession, time: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={updatedSession.description}
-                onChange={(e) => setUpdatedSession({ ...updatedSession, description: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Button variant="primary" type="submit">
-              Update Session
-            </Button>
-          </Form>
+          {selectedSession && (
+            <>
+              <p><strong>Patient:</strong> {selectedSession.patientName}</p>
+              <p><strong>Date:</strong> {selectedSession.date}</p>
+              <p><strong>Time:</strong> {selectedSession.time}</p>
+              <p><strong>Status:</strong> {selectedSession.status}</p>
+              <p><strong>Title:</strong> {selectedSession.title || "N/A"}</p>
+            </>
+          )}
         </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>Close</Button>
+          <Button variant="primary" onClick={handleSendConfirmation}>Confirm</Button>
+        </Modal.Footer>
       </Modal>
-    </>
+
+      {/* Toast Notification */}
+      <ToastContainer position="top-end" className="p-3">
+        <Toast show={showToast} onClose={() => setShowToast(false)} delay={3000} autohide bg="success">
+          <Toast.Header>
+            <strong className="me-auto text-white">Confirmed</strong>
+          </Toast.Header>
+          <Toast.Body className="text-white">Session confirmed successfully.</Toast.Body>
+        </Toast>
+      </ToastContainer>
+    </Container>
+        </div>
   );
 };
 
